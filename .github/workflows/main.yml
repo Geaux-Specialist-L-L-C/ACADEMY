@@ -1,0 +1,169 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, firebase ]
+    paths-ignore:
+      - '**.md'
+      - '.github/copilot-instructions.md'
+      - 'docs/**'
+  pull_request:
+    branches: [ main, develop, firebase ]
+    paths-ignore:
+      - '**.md'
+      - '.github/copilot-instructions.md'
+      - 'docs/**'
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
+env:
+  NODE_VERSION: '20'
+  VITE_USE_SECURE_COOKIES: 'true'
+  VITE_AUTH_PERSISTENCE: 'LOCAL'
+  VITE_AUTH_POPUP_FALLBACK: 'true'
+  VITE_SERVICE_WORKER_TIMEOUT: '10000'
+  VITE_MAX_AUTH_RETRIES: '3'
+  VITE_AUTH_POPUP_REDIRECT_RESOLVER: 'browser'
+
+jobs:
+  validate-environment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate development environment
+        run: |
+          if [ -f "devcontainer.json" ]; then
+            echo "✅ Development container configuration validated"
+          else
+            echo "❌ Error: Missing devcontainer.json"
+            exit 1
+          fi
+
+  build-and-test:
+    needs: validate-environment
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Clear npm cache
+      run: npm cache clean --force
+      
+    - name: Install dependencies
+      run: npm ci --legacy-peer-deps
+
+    - name: Setup Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: latest
+
+    - name: Start Supabase Local Development
+      run: |
+        supabase init
+        supabase start
+
+    - name: Run linter
+      run: npm run lint
+
+    - name: Run tests
+      run: npm test
+      env:
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        VITE_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}
+        VITE_CHESHIRE_API_URL: ${{ secrets.VITE_CHESHIRE_API_URL }}
+        VITE_CHESHIRE_API_TOKEN: ${{ secrets.VITE_CHESHIRE_API_TOKEN }}
+        VITE_CHESHIRE_API_TOKEN_TYPE: ${{ secrets.VITE_CHESHIRE_API_TOKEN_TYPE }}
+        VITE_CHESHIRE_DEBUG: ${{ secrets.VITE_CHESHIRE_DEBUG }}
+        VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
+
+    - name: Build
+      run: npm run build
+      env:
+        NODE_ENV: production
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        VITE_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}
+        VITE_CHESHIRE_API_URL: ${{ secrets.VITE_CHESHIRE_API_URL }}
+        VITE_CHESHIRE_API_TOKEN: ${{ secrets.VITE_CHESHIRE_API_TOKEN }}
+        VITE_CHESHIRE_API_TOKEN_TYPE: ${{ secrets.VITE_CHESHIRE_API_TOKEN_TYPE }}
+        VITE_CHESHIRE_DEBUG: ${{ secrets.VITE_CHESHIRE_DEBUG }}
+        VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
+
+    - name: Check bundle size
+      run: npm run analyze-bundle || true
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build
+        path: dist/
+
+  deploy:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: latest
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build
+        path: dist/
+
+    - name: Setup Supabase Project
+      run: |
+        supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} -p ${{ secrets.SUPABASE_DB_PASSWORD }}
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+    - name: Deploy Supabase Functions
+      run: |
+        supabase functions deploy
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+    - name: Deploy Static Assets
+      uses: supabase/hosting-deploy@v1
+      with:
+        project_id: ${{ secrets.SUPABASE_PROJECT_ID }}
+        access_token: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        dist_dir: dist/
+
+    - name: Deploy to Firebase Hosting
+      uses: FirebaseExtended/action-hosting-deploy@v0
+      with:
+        repoToken: ${{ secrets.GITHUB_TOKEN }}
+        firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEAUX_ACADEMY }}
+        channelId: live
+        projectId: geaux-academy
