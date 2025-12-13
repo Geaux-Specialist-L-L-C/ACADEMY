@@ -1,0 +1,31 @@
+"""
+Main entrypoint for the FastAPI application.
+
+This module instantiates the FastAPI app, configures middleware, and wires up
+all available API routers.
+"""
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from backend.routes import users
+
+app = FastAPI(title="Geaux Academy API", version="0.1.0")
+
+# CORS configuration to support the frontend during development.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Register API routers
+app.include_router(users.router, tags=["users"])
+
+
+@app.get("/health", tags=["health"])
+async def health_check() -> dict[str, str]:
+    """Simple health check endpoint."""
+    return {"status": "ok"}
