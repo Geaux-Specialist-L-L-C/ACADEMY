@@ -7,13 +7,40 @@ import jwt
 from datetime import datetime, timedelta
 from fastapi import HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseSettings, Field, validator
 
 from backend.models.user import User
 
-# Secret key for encoding and decoding JWT tokens
-SECRET_KEY = "your_secret_key"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+class Settings(BaseSettings):
+    """Configuration for JWT handling sourced from environment variables."""
+
+    secret_key: str = Field(..., env="SECRET_KEY", description="Secret key for signing JWTs")
+    algorithm: str = Field("HS256", env="ALGORITHM", description="JWT signing algorithm")
+    access_token_expire_minutes: int = Field(
+        30,
+        env="ACCESS_TOKEN_EXPIRE_MINUTES",
+        description="Access token expiry duration in minutes",
+    )
+
+    @validator("secret_key")
+    def validate_secret_key(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("SECRET_KEY must not be empty")
+        return value
+
+    @validator("access_token_expire_minutes")
+    def validate_expiry(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("ACCESS_TOKEN_EXPIRE_MINUTES must be a positive integer")
+        return value
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
+
+
+settings = Settings()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -40,15 +67,15 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
 
 def verify_token(token: str):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         return payload
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")

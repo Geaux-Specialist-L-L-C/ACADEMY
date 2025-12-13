@@ -44,6 +44,12 @@ To get a local copy up and running, follow these steps:
      ```bash
      pip install -r requirements.txt
      ```
+   - Configure environment variables for JWT authentication. Create a `.env` file in `backend/` (or set the variables in your shell) with:
+      ```bash
+      SECRET_KEY="your_secret_key"          # Required: non-empty string used to sign JWTs
+      ALGORITHM="HS256"                     # Optional: JWT signing algorithm (default: HS256)
+      ACCESS_TOKEN_EXPIRE_MINUTES=30         # Optional: positive integer token lifetime in minutes (default: 30)
+      ```
 
 ### Running the Application
 
