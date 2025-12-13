@@ -73,6 +73,7 @@ const App: React.FC = (): JSX.Element => {
   const routes = useMemo(() => (
     <Routes>
       <Route element={<Layout />}>
+        {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/assessment" element={<Assessment />} />
@@ -83,7 +84,8 @@ const App: React.FC = (): JSX.Element => {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/learning-styles" element={<LearningStyles />} />
         <Route path="/curriculum" element={<Curriculum />} />
-        
+        <Route path="/todos" element={<Todos />} />
+
         {/* Protected Routes */}
         <Route path="/dashboard" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
         <Route path="/parent-dashboard" element={<PrivateRoute><ParentDashboard /></PrivateRoute>} />
@@ -106,37 +108,6 @@ const App: React.FC = (): JSX.Element => {
             {routes}
           </Suspense>
         </AppContainer>
-        <StyledThemeProvider theme={styledTheme}>
-          <AppContainer>
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
-                <Route element={<Layout />}>
-                  {/* Public Routes */}
-                  <Route path="/" element={<Home />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/features" element={<Features />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route path="/learning-styles" element={<LearningStyles />} />
-                  <Route path="/curriculum" element={<Curriculum />} />
-                  <Route path="/todos" element={<Todos />} />
-                  
-                  {/* Protected Routes */}
-                  <Route path="/dashboard" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
-                  <Route path="/parent-dashboard" element={<PrivateRoute><ParentDashboard /></PrivateRoute>} />
-                  <Route path="/student-dashboard/:id" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
-                  <Route path="/student-profile/:id" element={<PrivateRoute><StudentProfile /></PrivateRoute>} />
-                  <Route path="/learning-plan" element={<PrivateRoute><LearningPlan /></PrivateRoute>} />
-                  <Route path="/assessment/:studentId" element={<PrivateRoute><TakeAssessment /></PrivateRoute>} />
-                  <Route path="/learning-style-chat/:studentId" element={<PrivateRoute><LearningStyleChat /></PrivateRoute>} />
-                  <Route path="/test-chat" element={<PrivateRoute><TestChat /></PrivateRoute>} />
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-              </Routes>
-            </Suspense>
-          </AppContainer>
-        </StyledThemeProvider>
       </MUIThemeProvider>
     </StyledThemeProvider>
   );
