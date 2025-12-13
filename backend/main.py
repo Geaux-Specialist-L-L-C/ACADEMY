@@ -8,7 +8,10 @@ all available API routers.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.database import init_db
 from backend.routes import users
+
+init_db()
 
 app = FastAPI(title="Geaux Academy API", version="0.1.0")
 
