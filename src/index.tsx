@@ -1,6 +1,3 @@
-// src/index.tsx
-// This file has been deprecated
-// The application entry point is now in main.tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -12,20 +9,20 @@ import './index.css';
 
 // Firebase configuration with environment variables
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || '',
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || '',
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || '',
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: process.env.REACT_APP_FIREBASE_APP_ID || '',
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || '',
+  databaseURL: process.env.REACT_APP_FIREBASE_DATABASE_URL || ''
 };
 
 // SSL configuration
 const sslConfig = {
-  key: import.meta.env.VITE_SSL_KEY,
-  cert: import.meta.env.VITE_SSL_CERT
+  key: process.env.REACT_APP_SSL_KEY || '',
+  cert: process.env.REACT_APP_SSL_CERT || ''
 };
 
 // Listen for auth service worker status events
@@ -33,7 +30,7 @@ window.addEventListener('firebase-auth-worker-status', (event: Event) => {
   const { success, isSecure, error } = (event as CustomEvent).detail;
   if (!success) {
     console.warn(
-      'Auth service worker initialization status:', 
+      'Auth service worker initialization status:',
       { success, isSecure, error }
     );
   }
