@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.database import init_db
-from backend.routes import users
+from backend.routes import auth, users
 
 init_db()
 
@@ -25,6 +25,7 @@ app.add_middleware(
 )
 
 # Register API routers
+app.include_router(auth.router, tags=["auth"])
 app.include_router(users.router, tags=["users"])
 
 

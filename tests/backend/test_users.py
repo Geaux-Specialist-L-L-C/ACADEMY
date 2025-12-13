@@ -14,6 +14,7 @@ from backend.main import app
 from backend.models.user import Base
 from backend.repositories.user_repository import UserRepository
 from backend.schemas.user import UserCreate
+from backend.services.user_service import get_password_hash
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
@@ -52,17 +53,21 @@ def client(db_session):
     app.dependency_overrides.clear()
 
 
+def create_user(db_session, username: str = "testuser", password: str = "secret"):
+    repository = UserRepository(db_session)
+    return repository.create(
+        UserCreate(username=username, email=f"{username}@example.com", password=password),
+        hashed_password=get_password_hash(password),
+    )
+
+
 def test_get_user_profile_unauthorized(client):
     response = client.get("/users/me")
     assert response.status_code == 401  # Expect unauthorized without authentication
 
 
 def test_get_user_profile_authorized(client, db_session):
-    repository = UserRepository(db_session)
-    user = repository.create(
-        UserCreate(username="testuser", email="test@example.com", password="secret"),
-        hashed_password="hashedsecret",
-    )
+    user = create_user(db_session)
     token = create_access_token(data={"sub": user.username})
 
     response = client.get("/users/me", headers={"Authorization": f"Bearer {token}"})
@@ -74,3 +79,48 @@ def test_get_user_profile_authorized(client, db_session):
         "full_name": None,
         "is_active": True,
     }
+
+
+def test_login_returns_access_token(client, db_session):
+    create_user(db_session)
+
+    response = client.post(
+        "/token", data={"username": "testuser", "password": "secret"}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["token_type"] == "bearer"
+    assert body["access_token"]
+
+
+def test_login_rejects_invalid_credentials(client, db_session):
+    create_user(db_session)
+
+    response = client.post(
+        "/token", data={"username": "testuser", "password": "wrong"}
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Incorrect username or password"
+
+
+def test_signup_creates_user(client, db_session):
+    response = client.post(
+        "/signup",
+        json={
+            "username": "newuser",
+            "email": "newuser@example.com",
+            "full_name": "New User",
+            "password": "freshpass",
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["username"] == "newuser"
+    assert body["email"] == "newuser@example.com"
+
+    repository = UserRepository(db_session)
+    created = repository.get_by_username("newuser")
+    assert created is not None
