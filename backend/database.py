@@ -4,7 +4,9 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.models.user import Base
+from backend.models import Base  # noqa: F401
+# Import models for side effects so metadata is populated before table creation.
+from backend import models  # noqa: F401
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./backend.db")
 
