@@ -5,17 +5,25 @@
 
 import jwt
 from datetime import datetime, timedelta
-from fastapi import HTTPException, Security, status
+from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseSettings, Field, validator
+from sqlalchemy.orm import Session
 
+from backend.database import get_db
 from backend.models.user import User
+from backend.repositories.user_repository import UserRepository
+from backend.services.user_service import UserService
 
 
 class Settings(BaseSettings):
     """Configuration for JWT handling sourced from environment variables."""
 
-    secret_key: str = Field(..., env="SECRET_KEY", description="Secret key for signing JWTs")
+    secret_key: str = Field(
+        "changeme",
+        env="SECRET_KEY",
+        description="Secret key for signing JWTs",
+    )
     algorithm: str = Field("HS256", env="ALGORITHM", description="JWT signing algorithm")
     access_token_expire_minutes: int = Field(
         30,
@@ -44,23 +52,6 @@ settings = Settings()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# Temporary in-memory user store for demonstration purposes
-_fake_users_db = {
-    "johndoe": {
-        "id": 1,
-        "username": "johndoe",
-        "email": "johndoe@example.com",
-        "full_name": "John Doe",
-        "hashed_password": "fakehashedpassword",
-    }
-}
-
-def _get_user(username: str) -> User | None:
-    user_data = _fake_users_db.get(username)
-    if not user_data:
-        return None
-    return User(**user_data)
-
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
@@ -81,7 +72,9 @@ def verify_token(token: str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-def get_current_user(token: str = Security(oauth2_scheme)) -> User:
+def get_current_user(
+    token: str = Security(oauth2_scheme), db: Session = Depends(get_db)
+) -> User:
     payload = verify_token(token)
     username = payload.get("sub")
     if not username:
@@ -90,7 +83,9 @@ def get_current_user(token: str = Security(oauth2_scheme)) -> User:
             detail="Invalid token payload",
         )
 
-    user = _get_user(username)
+    repository = UserRepository(db)
+    service = UserService(repository)
+    user = service.get_by_username(username)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 

@@ -40,12 +40,12 @@ To get a local copy up and running, follow these steps:
      ```bash
      cd ../backend
      ```
-   - Install the backend dependencies (if using pip):
+   - Install the backend dependencies (needed for both local runs and CI):
      ```bash
      pip install -r requirements.txt
      ```
    - Configure environment variables for JWT authentication. Create a `.env` file in `backend/` (or set the variables in your shell) with:
-      ```bash
+    ```bash
       SECRET_KEY="your_secret_key"          # Required: non-empty string used to sign JWTs
       ALGORITHM="HS256"                     # Optional: JWT signing algorithm (default: HS256)
       ACCESS_TOKEN_EXPIRE_MINUTES=30         # Optional: positive integer token lifetime in minutes (default: 30)

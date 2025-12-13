@@ -1,0 +1,7 @@
+fastapi==0.110.2
+uvicorn[standard]==0.29.0
+sqlalchemy==2.0.30
+pydantic==1.10.14
+PyJWT==2.8.0
+passlib[bcrypt]==1.7.4
+pytest==8.2.2
