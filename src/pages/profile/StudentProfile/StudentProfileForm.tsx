@@ -105,7 +105,7 @@ export const StudentProfileForm: React.FC = () => {
           <Input
             type="text"
             value={formData.firstName}
-            onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, firstName: e.target.value})}
             disabled={formState.loading}
             required
           />
@@ -115,7 +115,7 @@ export const StudentProfileForm: React.FC = () => {
           <Input
             type="text"
             value={formData.lastName}
-            onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, lastName: e.target.value})}
             disabled={formState.loading}
             required
           />
@@ -127,7 +127,7 @@ export const StudentProfileForm: React.FC = () => {
             min="4"
             max="18"
             value={formData.age}
-            onChange={(e) => setFormData({...formData, age: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, age: e.target.value})}
             disabled={formState.loading}
             required
           />
@@ -137,7 +137,7 @@ export const StudentProfileForm: React.FC = () => {
           <Input
             type="text"
             value={formData.grade}
-            onChange={(e) => setFormData({...formData, grade: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, grade: e.target.value})}
             disabled={formState.loading}
             required
           />

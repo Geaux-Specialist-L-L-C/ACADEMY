@@ -1,9 +1,11 @@
+import { LearningStyle } from './profiles';
+
 export interface Student {
   id: string;
   name: string;
   grade?: string;
   age?: number;
-  learningStyle?: string;
+  learningStyle?: LearningStyle | LearningStyle['type'];
   hasTakenAssessment: boolean;
   progress?: Array<{
     id: string;
