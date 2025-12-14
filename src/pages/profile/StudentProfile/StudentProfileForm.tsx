@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { addDoc, collection } from 'firebase/firestore';
-import { db, auth } from '../firebase/config';
+import { db, auth } from '../../../firebase/config';
 import styled from 'styled-components';
 
 interface StudentFormData {
