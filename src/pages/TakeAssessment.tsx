@@ -22,12 +22,19 @@ const TakeAssessment: React.FC = () => {
       
       try {
         const studentProfile = await getStudentProfile(studentId);
-        if (!studentProfile || !studentProfile.id) {
+        if (!studentProfile) {
           setError("Student profile not found");
         } else {
+          const resolvedId = studentProfile.id || studentId;
+
+          if (!resolvedId) {
+            setError("Student profile not found");
+            return;
+          }
+
           setStudent({
             ...studentProfile,
-            id: studentProfile.id
+            id: resolvedId
           });
         }
       } catch (error) {
